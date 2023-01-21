@@ -36,7 +36,7 @@ describe("HomeComponent", () => {
     (course) => course.category === "ADVANCED"
   );
 
-  beforeEach(async () => {
+  beforeEach(async(() => {
     const coursesServiceSpy = jasmine.createSpyObj("CoursesService", [
       "findAllCourses",
     ]);
@@ -52,7 +52,7 @@ describe("HomeComponent", () => {
         el = fixture.debugElement;
         coursesService = TestBed.get(CoursesService);
       });
-  });
+  }));
 
   it("should create the component", () => {
     expect(component).toBeTruthy();
@@ -89,7 +89,7 @@ describe("HomeComponent", () => {
     expect(tabs.length).toBe(2, "Unexpected number of tabs found");
   });
 
-  it("should display advanced courses when tab clicked", () => {
+  it("should display advanced courses when tab clicked - fakeAsync", fakeAsync(() => {
     coursesService.findAllCourses.and.returnValue(of(setupCourses()));
 
     fixture.detectChanges();
@@ -98,7 +98,13 @@ describe("HomeComponent", () => {
     expect(tabs.length).toBe(2, "Unexpected number of tabs found");
 
     click(tabs[1]);
-    const cardTitles = el.queryAll(By.css(".mat-card-title"));
+    fixture.detectChanges();
+
+    flush();
+
+    // flushMicrotasks() // fails
+
+    const cardTitles = el.queryAll(By.css(".mat-tab-body-active"));
 
     expect(cardTitles.length).toBeGreaterThan(0, "Could not find card titles");
 
@@ -107,5 +113,32 @@ describe("HomeComponent", () => {
     expect(cardTitles[0].nativeElement.textContent).toContain(
       "Angular Security Course"
     );
-  });
+  }));
+
+  it("should display advanced courses when tab clicked - async", async(() => {
+    coursesService.findAllCourses.and.returnValue(of(setupCourses()));
+
+    fixture.detectChanges();
+
+    const tabs = el.queryAll(By.css(".mdc-tab"));
+    expect(tabs.length).toBe(2, "Unexpected number of tabs found");
+
+    click(tabs[1]);
+    fixture.detectChanges();
+
+    fixture.whenStable().then(() => {
+      console.log("called whenStable()");
+
+      const cardTitles = el.queryAll(By.css(".mat-tab-body-active"));
+
+      expect(cardTitles.length).toBeGreaterThan(
+        0,
+        "Could not find card titles"
+      );
+
+      expect(cardTitles[0].nativeElement.textContent).toContain(
+        "Angular Security Course"
+      );
+    });
+  }));
 });
